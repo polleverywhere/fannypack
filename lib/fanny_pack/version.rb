@@ -1,0 +1,3 @@
+module FannyPack
+  VERSION = '0.0.1'
+end

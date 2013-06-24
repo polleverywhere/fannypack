@@ -1,0 +1,8 @@
+src_files:
+  - fanny_pack
+helpers:
+  - helpers/**/*
+spec_files:
+  - "**/*_spec.*"
+src_dir: lib/assets/javascripts
+spec_dir: spec/javascripts
