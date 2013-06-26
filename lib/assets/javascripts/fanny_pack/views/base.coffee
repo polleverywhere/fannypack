@@ -16,8 +16,9 @@ FannyPack.namespace 'FannyPack.View', (View) ->
     _eventBus: =>
       @target.eventBus
 
-    append: (view) =>
-      @$el.append(view.render().$el)
+    append: (views...) =>
+      for view in views
+        @$el.append(view.render().$el)
 
     include: (modules...) ->
       for module in modules
