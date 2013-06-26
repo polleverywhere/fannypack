@@ -5,7 +5,7 @@ FannyPack.namespace 'FannyPack.View', (View) ->
     application: 'MyApp'
     externalEvents: {}
 
-    initialize: ->
+    _eventBus: =>
       app = @application
 
       # Allow creating the eventBus on a namespaced application
@@ -13,7 +13,6 @@ FannyPack.namespace 'FannyPack.View', (View) ->
       @target = @target[item] ?= {} for item in app.split '.'
       @target.eventBus ?= _.extend({}, Backbone.Events)
 
-    _eventBus: =>
       @target.eventBus
 
     append: (views...) =>
