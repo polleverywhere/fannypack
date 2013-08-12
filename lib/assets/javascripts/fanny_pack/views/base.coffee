@@ -9,7 +9,7 @@ FannyPack.namespace 'FannyPack.View', (View) ->
       app = @application
 
       # Allow creating the eventBus on a namespaced application
-      @target = window
+      @target = window || {}
       @target = @target[item] ?= {} for item in app.split '.'
       @target.eventBus ?= _.extend({}, Backbone.Events)
 
@@ -23,17 +23,22 @@ FannyPack.namespace 'FannyPack.View', (View) ->
       for module in modules
         _.extend @, module
 
-    template: (name, data={}) ->
+    template: (name, data={}) =>
       JST["#{@application}/templates/#{name}"](data)
 
     delegateEvents: (events) =>
       super
 
-      for action, handler of @externalEvents
-        @_eventBus().on action, _.bind(@[handler], @), @
+      @_eventBus() # causes eventBus to be created
+
+      for action, method of @externalEvents
+        if _.isFunction(method)
+          @_eventBus().on action, _.bind(method, @), @
+        else
+          @_eventBus().on action, _.bind(@[method], @), @
 
     stopListening: =>
-      for action, handler of @externalEvents
+      for action, method of @externalEvents
         @_eventBus().off action, null, @
 
       super

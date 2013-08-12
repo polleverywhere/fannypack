@@ -3,6 +3,39 @@ describe 'FannyPack', ->
     it 'exists', ->
       expect(FannyPack.View.Base).toBeDefined()
 
+    describe "externalEvents", ->
+      describe "anonymous functions", ->
+        it "are allowed to be registered as handlers", ->
+          counter = 0
+
+          class AnonymousHandlers extends FannyPack.View.Base
+            externalEvents:
+              'somethingCrazy': ->
+                counter += 1
+
+          anon = new AnonymousHandlers
+
+          anon.triggerEvent 'somethingCrazy'
+
+          expect(counter).toEqual(1)
+
+        it "preserve current context (this)", ->
+          class AnonymousHandlers extends FannyPack.View.Base
+            externalEvents:
+              'instanceVariable': ->
+                @myVar += 1
+
+            initialize: ->
+              @myVar = 0
+
+            testVar: =>
+              @myVar
+
+          anon = new AnonymousHandlers
+          anon.triggerEvent 'instanceVariable'
+
+          expect(anon.testVar()).toEqual(1)
+
     describe '#triggerEvent', ->
       afterEach ->
         delete TestApp
