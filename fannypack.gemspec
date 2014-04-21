@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.version     = FannyPack::VERSION
   s.authors     = ["Matt Diebolt", "Steel Fu"]
   s.email       = ["matt@polleverywhere.com", "steel@polleverywhere.com"]
-  s.homepage    = ""
+  s.homepage    = "http://getfannypack.com"
   s.summary     = %q{A simple set of base views to help develop Backbone applications.}
   s.description = %q{A simple set of base views to help develop Backbone applications.}
 
