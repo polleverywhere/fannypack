@@ -1,13 +1,8 @@
-source 'https://rubygems.org'
+# If you have OpenSSL installed, we recommend updating
+# the following line to use "https"
+source 'http://rubygems.org'
 
-gem 'haml_coffee_assets'
+gemspec
 
-group :test, :development do
-  gem 'jasmine'
-  gem 'jasmine-headless-webkit'
-  gem 'jasmine-spec-extras'
-
-  gem 'guard-jasmine-headless-webkit'
-
-  gem 'rake'
-end
+gem 'jasmine', '~> 2.0.0'
+gem 'middleman-jasmine'

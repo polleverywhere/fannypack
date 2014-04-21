@@ -1,8 +1,10 @@
-src_files:
-  - fanny_pack
+src_dir:
+  - lib/assets/javascripts
+  - vendor/assets/javascripts
+spec_dir:
+  - spec/javascripts
 helpers:
   - helpers/**/*
 spec_files:
   - "**/*_spec.*"
-src_dir: lib/assets/javascripts
-spec_dir: spec/javascripts
+

@@ -3,25 +3,25 @@ describe 'FannyPack', ->
     it 'exists', ->
       expect(FannyPack.View.Base).toBeDefined()
 
-    describe "externalEvents", ->
+    describe "appEvents", ->
       describe "anonymous functions", ->
         it "are allowed to be registered as handlers", ->
           counter = 0
 
           class AnonymousHandlers extends FannyPack.View.Base
-            externalEvents:
+            appEvents:
               'somethingCrazy': ->
                 counter += 1
 
           anon = new AnonymousHandlers
 
-          anon.triggerEvent 'somethingCrazy'
+          anon.app.trigger 'somethingCrazy'
 
           expect(counter).toEqual(1)
 
         it "preserve current context (this)", ->
           class AnonymousHandlers extends FannyPack.View.Base
-            externalEvents:
+            appEvents:
               'instanceVariable': ->
                 @myVar += 1
 
@@ -32,36 +32,18 @@ describe 'FannyPack', ->
               @myVar
 
           anon = new AnonymousHandlers
-          anon.triggerEvent 'instanceVariable'
+          anon.app.trigger 'instanceVariable'
 
           expect(anon.testVar()).toEqual(1)
 
-    describe '#triggerEvent', ->
+    describe '#trigger', ->
       afterEach ->
         delete TestApp
         delete Mobile
 
-      it 'registers an application specific eventBus', ->
-        class EventBus extends FannyPack.View.Base
-          application: 'TestApp'
-
-        view = new EventBus
-
-        expect(TestApp.eventBus).toBeDefined()
-        expect(view._eventBus()).toBeDefined()
-
-      it 'registers a namespaced application specific eventBus', ->
-        class EventBus extends FannyPack.View.Base
-          application: 'MyOrg.TestApp'
-
-        view = new EventBus
-
-        expect(MyOrg.TestApp.eventBus).toBeDefined()
-        expect(view._eventBus()).toBeDefined()
-
-      it 'triggers events on an event bus', ->
+      it 'triggers an app event', ->
         class Listener extends FannyPack.View.Base
-          externalEvents:
+          appEvents:
             'test': 'test'
             'second': 'another'
 
@@ -74,15 +56,15 @@ describe 'FannyPack', ->
 
         view = new Listener
 
-        view.triggerEvent 'test'
-        view.triggerEvent 'second'
+        view.app.trigger 'test'
+        view.app.trigger 'second'
 
         expect(testSpy).toHaveBeenCalledOnce()
         expect(secondSpy).toHaveBeenCalledOnce()
 
       it 'passes function arguments through', ->
         class Listener extends FannyPack.View.Base
-          externalEvents:
+          appEvents:
             'test': 'test'
 
           test: (one, two, three) ->
@@ -92,62 +74,20 @@ describe 'FannyPack', ->
 
         view = new Listener
 
-        view.triggerEvent 'test', 1, 'two', [3]
+        view.app.trigger 'test', 1, 'two', [3]
 
         expect(spy).toHaveBeenCalledWith(1, 'two', [3])
 
-      it 'cleans up eventBus handlers when the view is destroyed', ->
-        class Advice extends FannyPack.View.Base
-          application: 'TestApp'
-
-          externalEvents:
-            'never': 'test'
-            'trust': 'another'
-            'twain': 'last'
-
-          test: ->
-          another: ->
-          last: ->
-
-        # need to declare this before instantiating view
-        testSpy = sinon.spy(Advice.prototype, 'test')
-        secondSpy = sinon.spy(Advice.prototype, 'another')
-        lastSpy = sinon.spy(Advice.prototype, 'last')
-
-        view = new Advice
-
-        # trigger events normally
-        view.triggerEvent 'never'
-        view.triggerEvent 'never'
-
-        view.triggerEvent 'trust'
-        view.triggerEvent 'twain'
-
-        # get rid of the view
-        view.remove()
-
-        # try to trigger events by hand.
-        # should not call spies again
-        TestApp.eventBus.trigger 'never'
-        TestApp.eventBus.trigger 'trust'
-        TestApp.eventBus.trigger 'twain'
-
-        expect(testSpy).toHaveBeenCalledTwice()
-        expect(secondSpy).toHaveBeenCalledOnce()
-        expect(secondSpy).toHaveBeenCalledOnce()
-
     describe 'include', ->
       it "doesn't include methods on the base prototype", ->
-        Mixin =
+        Mixin = (self) ->
           seeMe: -> ''
 
         class MixinTarget extends FannyPack.View.Base
-          application: 'TestApp'
-
-          @::include Mixin
+          initialize: ->
+            @include Mixin
 
         class Another extends FannyPack.View.Base
-          application: 'TestApp'
 
         mixinTarget = new MixinTarget
         another = new Another
@@ -156,15 +96,14 @@ describe 'FannyPack', ->
         expect(another.seeMe).not.toBeDefined()
 
       it 'adds included module methods to object prototype', ->
-        Mixin =
-          count: -> @application
-          average: -> @application
-          format: -> @application
+        Mixin = (self) ->
+          count: -> self.app
+          average: -> self.app
+          format: -> self.app
 
         class Includer extends FannyPack.View.Base
-          application: 'TestApp'
-
-          @::include Mixin
+          initialize: ->
+            @include Mixin
 
         view = new Includer
 
@@ -172,17 +111,18 @@ describe 'FannyPack', ->
         expect(view.average).toBeDefined()
         expect(view.format).toBeDefined()
 
-        expect(view.count()).toEqual('TestApp')
+        expect(view.count()).toEqual(FannyPack.app)
 
       it 'includes multiple modules', ->
-        Minin =
+        Minin = (self) ->
           methodOne: -> 1
 
-        Maxin =
+        Maxin = (self) ->
           methodTwo: -> 2
 
         class Includer extends FannyPack.View.Base
-          @::include Minin, Maxin
+          initialize: ->
+            @include Minin, Maxin
 
         view = new Includer
 

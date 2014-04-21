@@ -1,48 +1,90 @@
-#= require ../namespace
-
 FannyPack.namespace 'FannyPack.View', (View) ->
   class View.Base extends Backbone.View
-    application: 'MyApp'
-    externalEvents: {}
-
-    _eventBus: =>
-      app = @application
-
-      # Allow creating the eventBus on a namespaced application
-      @target = window || {}
-      @target = @target[item] ?= {} for item in app.split '.'
-      @target.eventBus ?= _.extend({}, Backbone.Events)
-
-      @target.eventBus
-
-    append: (views...) =>
-      for view in views
-        @$el.append(view.render().$el)
-
     include: (modules...) ->
       for module in modules
-        _.extend @, module
+        _.extend this, module(this)
 
-    template: (name, data={}) =>
-      JST["#{@application}/templates/#{name}"](data)
+    constructor: (options = {}) ->
+      # Set the app for this view to the base application
+      # that FannyPack.Router.Base sets up in its initialize method.
+      @app ||= FannyPack.app
+
+      {title, template} = options
+
+      # Set the page title if we're given one.
+      @title = title if title?
+
+      # Override the template if specified
+      @template = template if template?
+
+      # TODO - Figure out how to show the full namespace
+      # of the view that's being rendered (and not just the prototype name)
+      # Make it easier for non-lib devs to find views.
+      @app.log "Constructing View", @
+
+      # Tell the router what the title of our window should be.
+      @app.title @title if @title
+
+      # make sure we have an external events hash
+      # if the child class hasn't defined one
+      @appEvents ?= {}
+
+      # Setup Backbone.View last since it fires the
+      # subclasses' `initialize` method, which assumes
+      # everything above is setup.
+      super
+
+    # Listen to a list of events and fire callback only once
+    # e.g. @listenToChanges @poll, "max_votes web_enabled sms_enabled", @refreshPage
+    # The above will call @refreshPage only once instead of 3 times for each attribute
+    # change event
+    listenToChanges: (model, attributes, callback) =>
+      attributes = attributes.split /\s+/
+      @listenTo model, 'change', (model) ->
+        changedAttributes = _.keys model.changed
+
+        if _.intersection(changedAttributes, attributes).length
+          callback.apply(@, model)
+
+    pageTitle: =>
+      if _.isFunction(@title)
+        @title.apply(@)
+      else
+        @title
+
+    _configureAppEvents: =>
+      for action, handler of @appEvents
+        try
+          method = @[handler]
+          method = handler if _.isFunction(handler)
+          boundMethod = _.bind(method, @)
+
+          @app.on action, boundMethod
+        catch
+          name = "'#{@constructor?.name || ''}'"
+          message = "View #{name} has no method named '#{handler}'. It cannot be registered as a handler for application events."
+          throw new Error(message)
+
+      @
 
     delegateEvents: (events) =>
       super
+      @_configureAppEvents()
+      @
 
-      @_eventBus() # causes eventBus to be created
-
-      for action, method of @externalEvents
-        if _.isFunction(method)
-          @_eventBus().on action, _.bind(method, @), @
-        else
-          @_eventBus().on action, _.bind(@[method], @), @
-
-    stopListening: =>
-      for action, method of @externalEvents
-        @_eventBus().off action, null, @
-
+    undelegateEvents: =>
       super
+      for action, handler of @appEvents
+        @app.off action, _.bind @[handler], @
+      @
 
-    triggerEvent: (eventName, args...) =>
-      # pass all these through
-      @_eventBus().trigger eventName, args...
+    renderTemplate: (template = @template) =>
+      @app.log "Rendering Template", template
+      @$el.html JST[template]()
+
+    renderTitle: =>
+      @$(".title").text @pageTitle()
+      @app.title @pageTitle()
+
+    pageClass: =>
+      ""

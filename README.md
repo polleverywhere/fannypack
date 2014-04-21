@@ -1,6 +1,6 @@
 # fanny-pack
 
-A simple set of base views to help develop Backbone applications.
+Base classes for building Backbone applications that you shouldn't leave home without.
 
 ## Documentation
 
@@ -12,8 +12,26 @@ FannyPack.namespace 'MyApp.View', (View) ->
     show: ->
     hide: ->
 ```
+**Router/Application/EventBus**: FannyPack applications are Backbone routers and use the router as an eventBus. Your application should consist of 1 router that lives at ```FannyPack.app```. All FannyPack base views are aware of the application at ```FannyPack.app```. FannyPack also comes with its own base view which takes care of rendering views. You can override the default behavior to introduce transitions.
 
-The first string ensures that `MyApp`, and `View` exist, and then gives you a reference to the `View` key. From there you define your new view.
+```coffee
+# A sample FannyPack application router
+class MyApp extends FannyPack.Router.Base
+  routes:
+    "": "index"
+
+  index: =>
+    view = new View.Index
+
+    # @view view is the routers own view. Call `activate` to replace the existing rendered view with the new view
+    @view.activate view
+
+# This goes in your application.html
+$ ->
+  FannyPack.app = new MyApp().start
+    pushState: true # Enable if you want to start Backbone.history with pushState
+    el: $('body') # The is the element the router will attach its application view to
+```
 
 **Base Class**: The base class can’t infer the current application you’re working on, so you need to define a base class for your application that all your views will inherit from.
 
@@ -22,7 +40,6 @@ FannyPack.namespace 'MyApp.View', (View) ->
   # set up an application specific base view that
   # inherits from our FannyPack base view
   class View.Base extends FannyPack.View.Base
-    application: 'Editor'
 ```
 
 **Templates**: We use [haml\_coffee\_assets](https://github.com/netzpirat/haml_coffee_assets) for our templating.
@@ -32,7 +49,7 @@ FannyPack.namespace 'MyApp.View', (View) ->
 Then, make sure to require it with sprockets.
 
 ```coffee
-# FannyPack.Base#template usage
+# FannyPack.Base#renderTemplate usage
 
 #= require my_app/templates/view
 
@@ -44,7 +61,7 @@ FannyPack.namespace "MyApp.View", (View) ->
         headerLogoUrl
       } = @model.flashOptions().attributes
 
-      @$el.html @template 'chart_header',
+      @$el.html @renderTemplate 'chart_header',
         title: @model.get('title')
         headerPlacement: headerLogoPlacement
         headerLogoUrl: headerLogoUrl
@@ -66,10 +83,10 @@ FannyPack.namespace 'MyApp.View', (View) ->
 
       # send the 'header:toggle' event to any view that is listening
       # passing them a boolean of whether the current view is hidden
-      @triggerEvent 'header:toggle', @$el.hasClass('hidden')
+      @app.trigger 'header:toggle', @$el.hasClass('hidden')
 
   class View.Body extends View.Base
-    externalEvents:
+    appEvents:
       'header:toggle': 'resize'
 
     # this is called whenever ChartHeader or any other view
@@ -85,7 +102,7 @@ FannyPack.namespace 'MyApp.View', (View) ->
 # FannyPack.Base#include usage
 
 FannyPack.namespace 'MyApp.View' (View) ->
-  View.MyModule =
+  View.MyModule = (self) ->
     eat: ->
       'mmm'
 
@@ -95,14 +112,13 @@ FannyPack.namespace 'MyApp.View' (View) ->
     breathe: ->
       '*silent*'
 
-    # use the fat arrow if you need to
-    # reference `this` in your method
-    getModel: =>
-      @model
+    getModel: ->
+      self.model
 
 FannyPack.namespace 'MyApp.View', (View) ->
   class View.Person extends View.Base
-    @::include View.MyModule
+    initialize: ->
+      @include View.MyModule
 
 view = new MyApp.View.Person
   model: new Backbone.Model
@@ -122,7 +138,7 @@ view.getModel() # => Backbone.Model
 
 FannyPack.namespace 'MyApp.View' (View) ->
   class View.DontLeak extends View.Base
-    externalEvents:
+    appEvents:
       'otherView:update': 'render'
 
     events:
@@ -147,20 +163,4 @@ FannyPack.namespace 'MyApp.View' (View) ->
   # all jQuery events, all external events and removes the
   # view element from the DOM
   view.remove()
-```
-
-**Subviews**: Add subviews by calling append on the current view.
-
-```coffee
-# FannyPack.Base#append usage
-
-FannyPack.namespace 'MyApp.View' (View) ->
-  View.ParentView extends View.Base
-    initialize: ->
-      @childView = new Backbone.View
-
-    render: =>
-      # syntax sugar. Equivalent to
-      # @$el.append(@childView.render().$el)
-      @append @childView
 ```

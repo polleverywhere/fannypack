@@ -1,7 +1,10 @@
-window.FannyPack ||= {}
+if module?.exports?
+  global.FannyPack ||= {}
+else
+  window.FannyPack ||= {}
 
 FannyPack.namespace = (target, name, block) ->
-  [target, name, block] = [(if typeof exports isnt 'undefined' then exports else window), arguments...] if arguments.length < 3
+  [target, name, block] = [(if global? then global else window), arguments...]
   top    = target
   target = target[item] or= {} for item in name.split '.'
-  block target, top
+  block target, name

@@ -19,9 +19,9 @@ FannyPack.namespace 'FannyPack.View', (View) ->
 
         @subViews.push v
 
-        @append v
+        @$el.append v.render().$el
 
-      return this
+      @
 
     remove: =>
       _.invoke @subViews, 'remove'

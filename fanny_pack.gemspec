@@ -2,7 +2,7 @@
 require File.expand_path('../lib/fanny_pack/version', __FILE__)
 
 Gem::Specification.new do |s|
-  s.name        = "fanny_pack"
+  s.name        = "fannypack"
   s.version     = FannyPack::VERSION
   s.authors     = ["Matt Diebolt", "Steel Fu"]
   s.email       = ["matt@polleverywhere.com", "steel@polleverywhere.com"]
@@ -15,4 +15,8 @@ Gem::Specification.new do |s|
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
+
+  s.add_development_dependency 'middleman', '~> 3.3'
+  s.add_development_dependency 'growl'
+  s.add_development_dependency 'rb-fsevent'
 end
