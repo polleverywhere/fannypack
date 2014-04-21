@@ -4,8 +4,8 @@ require File.expand_path('../lib/fanny_pack/version', __FILE__)
 Gem::Specification.new do |s|
   s.name        = "fannypack"
   s.version     = FannyPack::VERSION
-  s.authors     = ["Matt Diebolt", "Steel Fu"]
-  s.email       = ["matt@polleverywhere.com", "steel@polleverywhere.com"]
+  s.authors     = ["Matt Diebolt", "Steel Fu", "Brad Gessler"]
+  s.email       = ["matt@polleverywhere.com", "steel@polleverywhere.com", "brad@polleverywhere.com"]
   s.homepage    = "http://getfannypack.com"
   s.summary     = %q{A simple set of base views to help develop Backbone applications.}
   s.description = %q{A simple set of base views to help develop Backbone applications.}
