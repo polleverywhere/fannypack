@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fanny_pack (0.2)
+    fannypack (0.2)
 
 GEM
   remote: http://rubygems.org/
@@ -119,7 +119,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  fanny_pack!
+  fannypack!
   growl
   jasmine (~> 2.0.0)
   middleman (~> 3.3)

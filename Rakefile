@@ -1,15 +1,50 @@
-require "bundler/gem_helper"
+require "bundler/gem_tasks"
 
-task :default => [:spec]
+namespace :jasmine do
+  task :configure do
+    require 'jasmine/config'
 
-desc "Run jasmine specs"
-task :spec do
-  sh %[bundle exec jasmine-headless-webkit -c]
-end
+    begin
+      Jasmine.load_configuration_from_yaml(ENV['JASMINE_CONFIG_PATH'])
+    rescue Jasmine::ConfigNotFound => e
+      puts e.message
+      exit 1
+    end
+  end
 
-# run the spec and keep the html file output.
-# also clears out previous saved output files
-desc "Debug specs"
-task :debug do
-  sh %[rm -f jhw.* && bundle exec jasmine-headless-webkit -c --keep]
+  task :require do
+    require 'jasmine'
+  end
+
+  task :require_json do
+    begin
+      require 'json'
+    rescue LoadError
+      puts "You must have a JSON library installed to run jasmine:ci. Try \"gem install json\""
+      exit
+    end
+  end
+
+  desc 'Run continuous integration tests'
+  task :ci => %w(jasmine:require_json jasmine:require jasmine:configure) do
+    config = Jasmine.config
+
+    pid = spawn "foreman start -p #{config.port(:ci)}"
+
+    sleep 5
+
+    formatters = config.formatters.map { |formatter_class| formatter_class.new }
+
+    exit_code_formatter = Jasmine::Formatters::ExitCode.new
+    formatters << exit_code_formatter
+
+    url = "#{config.host}:#{config.port(:ci)}/specs/jasmine"
+    runner = config.runner.call(Jasmine::Formatters::Multi.new(formatters), url)
+    runner.run
+
+    break unless exit_code_formatter.succeeded?
+
+    Process.kill "TERM", pid
+    exit
+  end
 end
